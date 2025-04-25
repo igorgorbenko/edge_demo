@@ -1,0 +1,10 @@
+mkdir -p mosquitto/config
+mkdir -p mosquitto/data
+mkdir -p mosquitto/log 
+
+# Создаем файл с паролями
+touch mosquitto/config/passwd
+
+# Добавляем пользователя (замените username и password на свои)
+docker-compose exec mqtt mosquitto_passwd -b /mosquitto/config/passwd edge_device your_secure_password
+docker-compose exec mqtt mosquitto_passwd -b /mosquitto/config/passwd aws_service another_secure_password 

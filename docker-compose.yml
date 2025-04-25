@@ -1,0 +1,49 @@
+services:
+  mqtt:
+    image: eclipse-mosquitto:latest
+    ports:
+      - "${MQTT_PORT}:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    restart: unless-stopped
+
+  mqtt-ui:
+    image: smeagolworms4/mqtt-explorer
+    ports:
+      - "4000:4000"
+    environment:
+      - MQTT_URL=mqtt://mqtt:1883
+    depends_on:
+      - mqtt
+
+  edge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: edge
+    environment:
+      - MQTT_HOST=mqtt
+      - MQTT_PORT=${MQTT_PORT}
+      - DEVICE_ID=${DEVICE_ID}
+      - SENSOR_TOPIC_PREFIX=${SENSOR_TOPIC_PREFIX}
+      - CONTROL_TOPIC_PREFIX=${CONTROL_TOPIC_PREFIX}
+    env_file:
+      - .env
+    depends_on:
+      - mqtt
+
+  aws:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: aws
+    environment:
+      - MQTT_HOST=mqtt
+      - MQTT_PORT=${MQTT_PORT}
+    env_file:
+      - .env
+    depends_on:
+      - mqtt

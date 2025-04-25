@@ -1,0 +1,40 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [dev, main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.Q1_AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.Q1_AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-central-1
+
+    - name: Login to Amazon ECR
+      run: |
+        aws ecr get-login-password | docker login --username AWS --password-stdin <account-id>.dkr.ecr.<region>.amazonaws.com
+
+    - name: Build and Push Docker image
+      run: |
+        docker build -t your-app .
+        docker tag your-app:latest <account-id>.dkr.ecr.<region>.amazonaws.com/your-app:latest
+        docker push <account-id>.dkr.ecr.<region>.amazonaws.com/your-app:latest
+
+    - name: Deploy to remote VM via SSH
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.Q1_VM_HOST }}
+        username: ${{ secrets.Q1_VM_USER }}
+        key: ${{ secrets.Q1_VM_SSH_KEY }}
+        script: |
+          docker pull <account-id>.dkr.ecr.<region>.amazonaws.com/your-app:latest
+          docker compose -f /home/ubuntu/your-app/docker-compose.yml up -d

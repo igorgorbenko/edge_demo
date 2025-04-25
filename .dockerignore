@@ -1,0 +1,7 @@
+mosquitto/data/
+mosquitto/log/
+.git
+.env
+.env.*
+__pycache__/
+*.pyc 
